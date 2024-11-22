@@ -4,82 +4,123 @@ let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
+// User registration
+public_users.post("/register", async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-public_users.post("/register", (req,res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    const existingUser = users.find(user => user.username === username);
+    if (existingUser) {
+      return res.status(409).json({ message: "Username already exists" });
+    }
+
+    users.push({ username, password });
+    return res.status(201).json({ message: "User registered successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: "Error registering user", error: error.message });
+  }
 });
+
+
+
 
 // Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  //Write your code here
-  res.send(books)
-
-
-
- 
-});
-
-// Get book details based on ISBN
-public_users.get('/isbn/:isbn', function (req, res) {
-  const isbn = req.params.isbn;
-
-  // Convert `books` to an array and filter
-  const BookArray=Object.values(books);
-  const book = BookArray.filter((book, index) => (index + 1).toString() === isbn);
-
-  if (book.length > 0) {
-    res.send(book); // Return the matched book
-  } else {
-    res.status(404).send({ message: "Book not found" });
+public_users.get('/', async (req, res) => {
+  try {
+    return res.status(200).json(Object.values(books));
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching books", error: error.message });
   }
 });
 
 
 
-  
+
+
+public_users.get('/isbn/:isbn', async (req, res) => {
+  try {
+    const isbn = req.params.isbn;
+    const book = books[isbn];
+
+    if (book) {
+      return res.status(200).json(book);
+    } else {
+      return res.status(404).json({ message: "Book not found" });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching book", error: error.message });
+  }
+});
+
+
+
+
+
 // Get book details based on author
-public_users.get('/author/:author',function (req, res) {
-  const author = req.params.author.toLowerCase();
+public_users.get('/author/:author', async (req, res) => {
+  try {
+    const author = req.params.author.toLowerCase();
+    const matchingBooks = Object.values(books).filter(book =>
+      book.author.toLowerCase() === author
+    );
 
-  // Convert `books` to an array and filter
-  const BookArray=Object.values(books);
-  const book = BookArray.filter((book, index) => book.author.toLowerCase() === author);
-
-  if (book.length > 0) {
-    res.send(book); // Return the matched book
-  } else {
-    res.status(404).send({ message: "Book not found" });
-  }
-});
-
-public_users.get('/title/:title', function (req, res) {
-  const title = req.params.title.toLowerCase(); // Convert title to lowercase for case-insensitive comparison
-
-  // Convert books object to array and search for matching titles
-  const matchingBooks = Object.values(books).filter((book) =>book.title.toLowerCase() === title);
-
-  if (matchingBooks.length > 0) {
-    res.status(200).json(matchingBooks); // Send the matched books
-  } else {
-    res.status(404).json({ message: "No book found with the given title" });
+    if (matchingBooks.length > 0) {
+      return res.status(200).json(matchingBooks);
+    } else {
+      return res.status(404).json({ message: "No book found with the given author" });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching books", error: error.message });
   }
 });
 
 
-//  Get book review
-public_users.get('/review/:isbn', function (req, res) {
-  const isbn = req.params.isbn; // Get ISBN from request parameters
 
-  // Find the book by its ISBN key
-  const book = books[isbn];
 
-  if (book) {
-    res.status(200).json({ reviews: book.reviews }); // Return the reviews of the book
-  } else {
-    res.status(404).json({ message: "Book not found" }); // Return error if book doesn't exist
+
+// Get book details based on title
+public_users.get('/title/:title', async (req, res) => {
+  try {
+    const title = req.params.title.toLowerCase();
+    const matchingBooks = Object.values(books).filter(book =>
+      book.title.toLowerCase() === title
+    );
+
+    if (matchingBooks.length > 0) {
+      return res.status(200).json(matchingBooks);
+    } else {
+      return res.status(404).json({ message: "No book found with the given title" });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching books", error: error.message });
   }
 });
+
+
+
+
+// Get book review
+public_users.get('/review/:isbn', async (req, res) => {
+  try {
+    const isbn = req.params.isbn;
+    const book = books[isbn];
+
+    if (book) {
+      return res.status(200).json({ reviews: book.reviews });
+    } else {
+      return res.status(404).json({ message: "Book not found" });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching reviews", error: error.message });
+  }
+});
+
+
+
 
 
 module.exports.general = public_users;
